@@ -27,7 +27,7 @@ library(ggplot2)
 
 # Required for model.fit:
 source("1Functions/NVTfns5.6.R")  
-setup.fn(computer='linux')
+setup.fn(computer='linux') 
 
 # Set-up MET details
 met.name <- "WheatMainNorth"
@@ -35,7 +35,7 @@ date <- "2018-09-01"
 date.out <- "2018-09-01"
 
 # Import data from 02-METfixR
-load("1RData/WheatMainNorth-2018-09-01-data4RMETcleanedready.RData")
+load("/home/mandy/Dropbox/CBB/Projects/BBAGI/GRDC/NVT/METs/WheatNorth-MM/1RData/WheatMainNorth-2018-09-01-data4RMETcleanedready.RData")
 
 ###### Data Checks and Set-up -------------------------------------------------------------------------------------------------------------------------
 

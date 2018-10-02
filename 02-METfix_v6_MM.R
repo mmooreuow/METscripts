@@ -33,18 +33,19 @@ require(XLConnect)
 
 # Required for model.fit:
 source("1Functions/NVTfns5.6.R")  
-setup.fn(computer='linux')
+setup.fn(computer='linux') # Change computer argument (computer = "") to the type of computer you are using. 
 
 # Set-up MET details
 met.name <- "WheatMainNorth"
 date <- "2018-09-01"
 date.out <- "2018-09-01"
+user.dir <- "/home/mandy/Dropbox/CBB/Projects/BBAGI/GRDC/NVT/METs/WheatNorth-MM/"
 
 # Import data from 01-DataCheckR
-load(paste0("1RData/", met.name, "-", date, "-data4MET.RData"))
+load(paste0(user.dir,"/1RData/", met.name, "-", date, "-data4MET.RData"))
 
 # Import trial summary data from csv
-trial.info <- read.csv("1RawData/Export_Wheat_Summary_2018-08-09.csv")
+trial.info <- read.csv(paste0(user.dir,"1RawData/Export_Wheat_Summary_2018-08-09.csv"))
 
 ###### Data Checks and Set-up -------------------------------------------------------------------------------------------------------------------------
 
@@ -110,7 +111,7 @@ subset(Rnvtdata, substring(tolower(Variety), 1, 4)=="fill" & is.na(yield)==FALSE
 vdata <- unique(Rnvtdata[, c("Variety", "Year")])
 vfreq <- with(vdata, table(Variety, Year))
 
- # Check
+ # Check if any are zero
  rowSums(vfreq)[rowSums(vfreq) ==0]
  # Format vfreq. This will be part of the output given to the breeder in the prelim data check file!
  vfreq <- as.data.frame(vfreq)
@@ -120,7 +121,7 @@ vfreq <- with(vdata, table(Variety, Year))
  ###### Check Reps for discrepancies ------------------------------------------------------------------------------------------------------------------
  
 # When designs are generated ColRep is equal to Rep. We can check changes in variety allocation
-# to trials by checking if Rep==ColRep and flag any trials where this does not.
+# to trials by checking if Rep==ColRep and flag any trials where this os not true.
 # Invesitage and consult TSPs/breeders (if required) if Reps==ColReps. 
 # Rep IS NOT part of the plot structure factors!
  
@@ -144,13 +145,13 @@ Rnvtdata[!as.character(Rnvtdata$Rep)==as.character(Rnvtdata$ColRep),c('Experimen
 # WMaA17SPRS4   4      3 LRPB Reliant
 # WMaA17SPRS4   4      3       Coolah
 
-rep.temp <- reps.check(data=Rnvtdata, BlockID="Rep", outfile1=paste0("1Graphics/", met.name, "-", date,"-layout-RepFixed.pdf"),
-                       outfile2=paste0("1Graphics/", met.name, "-", date,"-VarietyFreqperRepFixed.pdf"))
+rep.temp <- reps.check(data=Rnvtdata, BlockID="Rep", outfile1=paste0(user.dir,"1Graphics/", met.name, "-", date,"-layout-RepFixed.pdf"),
+                       outfile2=paste0(user.dir,"1Graphics/", met.name, "-", date,"-VarietyFreqperRepFixed.pdf"))
 (rep.na <- rep.temp$rep.na)
 (rep.bad <- rep.temp$rep.bad) 
 
 # Check plots in output file.
-# Comment: Some of the descrepancy is due to fillers being used in the experiment
+# Comment: Some of the discrepancy is due to fillers being used in the experiment
 # and reps of varieties have been swapped in rows.
 
   # Specific Experiment Investigations
@@ -167,11 +168,11 @@ rep.temp <- reps.check(data=Rnvtdata, BlockID="Rep", outfile1=paste0("1Graphics/
 
 levels(Rnvtdata$Rep)
 
-###### Check Colreps are aligned with logical blocks --------------------------------------------------------------------------------------------------
+##### Check Colreps are aligned with logical blocks --------------------------------------------------------------------------------------------------
 # check that ColReps are in same directions for all experiments within co-located trials.
 
-crep.temp <- reps.check(data=Rnvtdata, BlockID="ColRep", outfile1=paste0("1Graphics/", met.name, "-", date,"-layout-ColRepFixed.pdf"),
-                       outfile2=paste0("1Graphics/", met.name, "-", date,"-VarietyFreqperColRepFixed.pdf"))
+crep.temp <- reps.check(data=Rnvtdata, BlockID="ColRep", outfile1=paste0(user.dir,"1Graphics/", met.name, "-", date,"-layout-ColRepFixed.pdf"),
+                       outfile2=paste0(user.dir,"1Graphics/", met.name, "-", date,"-VarietyFreqperColRepFixed.pdf"))
 (rep.na <- crep.temp$rep.na)
 (rep.bad <- crep.temp$rep.bad) 
 
@@ -189,10 +190,10 @@ Rnvtdata$ColRep <- factor(Rnvtdata$ColRep)
 nlevels(Rnvtdata$ColRep)
 
 ###### Check RowReps are aligned with logical blocks --------------------------------------------------------------------------------------------------
-# check that RowReps are in same directions for all experiments within for co-located trials.
+# check that RowReps are in same directions for all experiments within co-located trials.
 
-rrep.temp <- reps.check(data=Rnvtdata, BlockID="RowRep", outfile1=paste0("1Graphics/", met.name, "-", date,"-layout-RowRepOrig.pdf"),
-                        outfile2=paste0("1Graphics/", met.name, "-", date,"-VarietyFreqperRowRepOrig.pdf"))
+rrep.temp <- reps.check(data=Rnvtdata, BlockID="RowRep", outfile1=paste0(user.dir,"1Graphics/", met.name, "-", date,"-layout-RowRepOrig.pdf"),
+                        outfile2=paste0(user.dir,"1Graphics/", met.name, "-", date,"-VarietyFreqperRowRepOrig.pdf"))
 (rrep.na <- rrep.temp$rep.na)
 (rrep.bad <- rrep.temp$rep.bad)
 
@@ -218,7 +219,7 @@ asreml.options(workspace = "1000mb", pworkspace="1000mb")
 
 # Previous versions of this script have this as a manual step
 # It involved using the mt output to obtain the names of the experiments for which there are covariates.  
-# This step now sorts itself out. 
+# This step is now automated but you can still check the mt to be thorough! 
 not.cov <- c("lrow", "lcol", "crep", "rrep", "rrow", "rcol", "resid")
 (mt.cov <- paste0('mt$',names(mt)[!names(mt)%in%not.cov]))
 (mt.cov <- mt.cov[-1]) # removes mt$YrCon (leave in for Co-located trials)
@@ -230,21 +231,21 @@ tmpdata <- droplevels(Rnvtdata[Rnvtdata$Experiment %in% temp1,])
 
 mt.tmp <- Colmodel.fit(models = tmpmodel, data = tmpdata)
 
-paste0("at(Experiment, ", mt.cov, "):", unlist(lapply(strsplit(mt.cov, "$", fixed = TRUE), function(x) x[2])), collapse = " + ")
-# Copy paste the output from the above command into the second line in the asreml call directly below
-# Don't fit any spatial terms in the model for testing covariates
-require(asreml)
-tmp.diag <- asreml(yield ~ Experiment + 
-                      at(Experiment, mt$animaldmg):animaldmg + at(Experiment, mt$est):est + at(Experiment, mt$earlygs):earlygs,
-                   sparse=~ at(Experiment):Variety,
-                   random = ~ at(Experiment, mt.tmp$crep):ColRep + at(Experiment, mt.tmp$rrep):RowRep, 
-                   residual = ~ dsum(~ar1(Range):ar1(Row)| Experiment, levels = mt.tmp$resid$aa),
-                   na.action = na.method(y='include', x='include'), data=tmpdata)
-tmp.diag <- update(tmp.diag)
-
-
-# OR simply run this command
+## Manual method
+# paste0("at(Experiment, ", mt.cov, "):", unlist(lapply(strsplit(mt.cov, "$", fixed = TRUE), function(x) x[2])), collapse = " + ")
+# # Copy paste the output from the above command into the second line in the asreml call directly below
+# # Don't fit any spatial terms in the model for testing covariates
 # require(asreml)
+# tmp.diag <- asreml(yield ~ Experiment + 
+#                       at(Experiment, mt$animaldmg):animaldmg + at(Experiment, mt$est):est + at(Experiment, mt$earlygs):earlygs,
+#                    sparse=~ at(Experiment):Variety,
+#                    random = ~ at(Experiment, mt.tmp$crep):ColRep + at(Experiment, mt.tmp$rrep):RowRep, 
+#                    residual = ~ dsum(~ar1(Range):ar1(Row)| Experiment, levels = mt.tmp$resid$aa),
+#                    na.action = na.method(y='include', x='include'), data=tmpdata)
+# tmp.diag <- update(tmp.diag)
+
+
+## Automated method - No copy paste, simply run.
 tmp.diag <- eval(parse(text = paste0("asreml(yield ~ Experiment + ",
                    paste0("at(Experiment, ", mt.cov, "):", unlist(lapply(strsplit(mt.cov, "$", fixed = TRUE), function(x) x[2])), collapse = " + "),",",
                    "sparse=~ at(Experiment):Variety,
@@ -252,7 +253,6 @@ tmp.diag <- eval(parse(text = paste0("asreml(yield ~ Experiment + ",
                    residual = ~ dsum(~ar1(Range):ar1(Row)| Experiment, levels = mt.tmp$resid$aa),
                    na.action = na.method(y='include', x='include'), data=tmpdata)")))
 tmp.diag <- update(tmp.diag)
-
 # Note: We don't fit any spatial terms in the model for testing covariates!
 
 # Check wald output for covariates. 
@@ -267,7 +267,7 @@ wald(tmp.diag, den.DF="default")
 # Covariates removed: NA
 
 # Remove from the Rnvtmodels dataframe if they are not significant.
-# e.g est is not significant for experiment WMaA14QUAN2 , remove it.
+# e.g est is not significant for experiment WMaA14QUAN2, therefore we would remove it.
 # Rnvtmodels$est[Rnvtmodels$Experiment=="WMaA14QUAN2"] <- 0
 
 ##### Test lin spatial terms --------------------------------------------------------------------------------------------------------------------------
@@ -340,7 +340,7 @@ lrow.Exp # 7
 
 #### CYCLE END ----------------------------------------------------------------------------------------------------------------------------------------
 
-#Correct the models file...
+#### Correct the models file --------------------------------------------------------------------------------------------------------------------------
 #First the random terms, because they depend on the linear term's
 #This allows the identifed random terms to be retained when they weren't associated with lin terms.
 rcol.Exp <- Rnvtmodels$Experiment[Rnvtmodels$lcol==Rnvtmodels$rcol]
@@ -374,9 +374,9 @@ sum(Rnvtmodels$rrow) #32
 
 #### Check the residual spatial terms -----------------------------------------------------------------------------------------------------------------
 # Summary:
-# Any autocorrelation term that has a -ve componenet value then a corresponding random term
-# is added to the model, after running the model again any autocorrelation terms 
-# still -ve get set to id instead of ar1.
+# If any autocorrelation term has a -ve componenet value then a corresponding random term
+# is added to the model, after running the model again any autocorrelation terms that are 
+# still -ve get set to id instead of ar.
 
 # A spatial model is determined by analysing the global and local spatial variation
 # for each site following Gilmour et al. (1997). For co-located trials this involves
@@ -386,11 +386,10 @@ sum(Rnvtmodels$rrow) #32
 # no autoregressive process (ar1 is not fitted because the number of dimensions is too
 # small). In addition, when the autocorrelations are estimated to be less than zero
 # then an equivalent random term is also fitted (e.g. if ar1(Row) is negative then Row
-# is fitted as a peripheral random effect.). If the autocorrelation estimate is still zero
+# is fitted as a peripheral random effect.). If the autocorrelation estimate is still -ve
 # after including this random peripheral term then associated residual term is set to be 
 # independent, as negative autocorrelations suggests some type of competition between plots 
 # which we do not currently model in NVT.
-
 
 Rnvtmodels0 <- Rnvtmodels #Just to keep what we did above somewhere secure
 
@@ -406,10 +405,10 @@ tmp.diag <- asreml(yield ~ Experiment +
                    sparse=~ at(Experiment):Variety,
                    random = ~ at(Experiment, mt$crep):ColRep + at(Experiment, mt$rrep):RowRep + 
                      at(Experiment, mt$rrow):Row + at(Experiment, mt$rcol):Range,
-                   #ROUND1 & 2
+                   #ROUND 1 & 2
                    residual = ~ dsum(~ar1(Range):ar1(Row)| Experiment, levels = mt$resid$aa) +
                                 dsum(~id(Range):ar1(Row)| Experiment, levels = mt$resid$ia),
-                   #ROUND3
+                   #ROUND 3 & 4
                    # residual = ~ dsum(~ar1(Range):ar1(Row)| Experiment, levels = mt$resid$aa) +
                    #              dsum(~ar1(Range):id(Row)| Experiment, levels = mt$resid$ai) +
                    #              dsum(~id(Range):ar1(Row)| Experiment, levels = mt$resid$ia) +
@@ -421,14 +420,15 @@ tmp.diag <- update(tmp.diag)
 
 #### Fix all that have -ve autocorrelation ------------------------------------------------------------------------------------------------------------
 # Fix them by fitting the associated random effect and checking if still -ve.
-# In ROUND 2 if still -ve then set to id.
+# After ROUND 2 if still -ve then set to id.
 
-# Use ROUND 1 results: assocaite -ve autocorrelations with random row/col as appropriate 
+# Use ROUND 1 results: associate -ve autocorrelations with random row/col as appropriate 
 # - look at variograms.
-pdf("1Graphics/DIAG-variograms1.pdf")
+pdf(paste0(user.dir,"1Graphics/DIAG-variograms1.pdf"))
 met.asreml(tmp.diag)
 dev.off()
 
+# Find -ve correlations for range and row
 tt <- summary(tmp.diag, vparameters = TRUE)$varcomp
 tt[tt$component < 0,]
 
@@ -437,13 +437,13 @@ range2fix <- range2fix[range2fix$component <0,]
 range2fix <- gsub("!Range!cor", "", gsub("Experiment_", "", rownames(range2fix), fixed = TRUE), fixed = TRUE)
 Rnvtmodels$resid <- as.character(Rnvtmodels$resid)
 Rnvtmodels$rcol[Rnvtmodels$Experiment %in% range2fix] <- 1 
-sum(Rnvtmodels$rcol[Rnvtmodels$Experiment %in% range2fix]) # round 1: 40; round 2: 38
+sum(Rnvtmodels$rcol[Rnvtmodels$Experiment %in% range2fix]) # round 1: 40
 
 row2fix <- tt[grep("!Row!cor", row.names(tt)),]
 row2fix <- row2fix[row2fix$component <0,]
 row2fix <- gsub("!Row!cor", "", gsub("Experiment_", "", rownames(row2fix), fixed = TRUE), fixed = TRUE)
 Rnvtmodels$rrow[Rnvtmodels$Experiment %in% row2fix] <- 1
-sum(Rnvtmodels$rrow[Rnvtmodels$Experiment %in% row2fix])  # round 1: 7; round 2: 8; round 4: 1.
+sum(Rnvtmodels$rrow[Rnvtmodels$Experiment %in% row2fix])  # round 1: 7
 
 ##### ROUND 2:----
 # Re-run the model to check if -ve correlations are still -ve
@@ -460,7 +460,7 @@ tmp.diag <- asreml(yield ~ Experiment +
                    # ROUND 1 & 2
                    residual = ~ dsum(~ar1(Range):ar1(Row)| Experiment, levels = mt$resid$aa) +
                      dsum(~id(Range):ar1(Row)| Experiment, levels = mt$resid$ia),
-                   #ROUND3
+                   #ROUND 3 & 4
                    # residual = ~ dsum(~ar1(Range):ar1(Row)| Experiment, levels = mt$resid$aa) +
                    #              dsum(~ar1(Range):id(Row)| Experiment, levels = mt$resid$ai) +
                    #              dsum(~id(Range):ar1(Row)| Experiment, levels = mt$resid$ia) +
@@ -478,15 +478,18 @@ tmp.diag <- update(tmp.diag)
 ss <- cbind(with(droplevels(subset(Rnvtdata, Experiment%in%range2fix)), tapply(Range, Experiment, function(x) length(unique(x)))),
              with(droplevels(subset(Rnvtdata, Experiment%in%range2fix)), tapply(ColRep, Experiment, function(x) length(unique(x)))))
 
-crep.rm <- dimnames(ss)[[1]][ss[,1]==ss[,2]] #none
+(crep.rm <- dimnames(ss)[[1]][ss[,1]==ss[,2]]) #none
 
 ss <- cbind(with(droplevels(subset(Rnvtdata, Experiment%in%row2fix)), tapply(Row, Experiment, function(x) length(unique(x)))),
              with(droplevels(subset(Rnvtdata, Experiment%in%row2fix)), tapply(RowRep, Experiment, function(x) length(unique(x)))))
 
-rrep.rm <- dimnames(ss)[[1]][ss[,1]==ss[,2]] # none
+(rrep.rm <- dimnames(ss)[[1]][ss[,1]==ss[,2]]) # none
 
-Rnvtmodels$rcol[Rnvtmodels$Experiment%in%crep.rm] <- 0
-Rnvtmodels$resid[Rnvtmodels$Experiment%in%crep.rm] <- "ia"
+### Run the following to correct this if crep.rm and/or rrep.rm are not empty
+# Rnvtmodels$rcol[Rnvtmodels$Experiment%in%crep.rm] <- 0
+# Rnvtmodels$resid[Rnvtmodels$Experiment%in%crep.rm] <- "ia"
+# Rnvtmodels$rrow[Rnvtmodels$Experiment%in%rrep.rm] <- 0
+# Rnvtmodels$resid[Rnvtmodels$Experiment%in%rrep.rm] <- "ai"
 
 #### Fix all that still have -ve autocorrelation ------------------------------------------------------------------------------------------------------
 # Fix them by setting to id.
@@ -506,9 +509,9 @@ range2fix <- gsub("!Range!cor", "", gsub("Experiment_", "", rownames(range2fix),
 row2fix <- cc[grep("!Row!cor", row.names(cc)),]
 row2fix <- row2fix[row2fix$component <0,]
 row2fix <- gsub("!Row!cor", "", gsub("Experiment_", "", rownames(row2fix), fixed = TRUE), fixed = TRUE) # BMaA16WALG2
-Rnvtmodels$resid[Rnvtmodels$Experiment %in% row2fix]
-Rnvtmodels$resid[Rnvtmodels$Experiment %in% row2fix & Rnvtmodels$resid=="aa"] <- "ai"
-Rnvtmodels$resid[Rnvtmodels$Experiment %in% row2fix & Rnvtmodels$resid=="ia"] <- "ii"
+ Rnvtmodels$resid[Rnvtmodels$Experiment %in% row2fix]
+ Rnvtmodels$resid[Rnvtmodels$Experiment %in% row2fix & Rnvtmodels$resid=="aa"] <- "ai"
+ Rnvtmodels$resid[Rnvtmodels$Experiment %in% row2fix & Rnvtmodels$resid=="ia"] <- "ii"
 
 ##### ROUND 3:----
 # Re-run the model to check for bound row and range terms
@@ -525,7 +528,7 @@ tmp.diag <- asreml(yield ~ Experiment +
                    # ROUND 1 & 2
                    # residual = ~ dsum(~ar1(Range):ar1(Row)| Experiment, levels = mt$resid$aa) +
                    #   dsum(~id(Range):ar1(Row)| Experiment, levels = mt$resid$ia),
-                   #ROUND3
+                   #ROUND 3 & 4
                    residual = ~ dsum(~ar1(Range):ar1(Row)| Experiment, levels = mt$resid$aa) +
                                 dsum(~ar1(Range):id(Row)| Experiment, levels = mt$resid$ai) +
                                 dsum(~id(Range):ar1(Row)| Experiment, levels = mt$resid$ia) +
@@ -540,7 +543,7 @@ tmp.diag <- update(tmp.diag)
 #### Check for bound Row and Range terms --------------------------------------------------------------------------------------------------------------
 # remove bound random terms unless assocated with lin terms
 
-pdf("1Graphics/DIAG-variograms3.pdf")
+pdf(paste0(user.dir,"1Graphics/DIAG-variograms3.pdf"))
 met.asreml(tmp.diag)
 dev.off()
 
@@ -571,7 +574,7 @@ tmp.diag <- asreml(yield ~ Experiment +
                    # ROUND 1 & 2
                    # residual = ~ dsum(~ar1(Range):ar1(Row)| Experiment, levels = mt$resid$aa) +
                    #   dsum(~id(Range):ar1(Row)| Experiment, levels = mt$resid$ia),
-                   # ROUND3
+                   # ROUND 3 & 4
                    residual = ~ dsum(~ar1(Range):ar1(Row)| Experiment, levels = mt$resid$aa) +
                      dsum(~ar1(Range):id(Row)| Experiment, levels = mt$resid$ai) +
                      dsum(~id(Range):ar1(Row)| Experiment, levels = mt$resid$ia) +
@@ -599,7 +602,7 @@ lapply(mt$resid, function(x) grep("WMaA13BILO4",x))
 # Add rrow term in model for "WMaA13BILO4"
 Rnvtmodels$rrow[Rnvtmodels$Experiment%in%c("WMaA13BILO4")] <- 1
 
-# Run ROUND 4 again:
+# Run ROUND 4 again: (Shift+alt+J - ROUND 4:)
 tt <- summary(tmp.diag, vparameters = TRUE)$varcomp
 tt[tt$component < 0,]
 #                                 component std.error   z.ratio bound %ch
@@ -609,10 +612,10 @@ tt[tt$component < 0,]
 Rnvtmodels$rrow[Rnvtmodels$Experiment%in%c("WMaA13BILO4")] <- 0
 Rnvtmodels$resid[Rnvtmodels$Experiment %in% c("WMaA13BILO4")] <- "ii"
 
-# Run ROUND 4 again:
+# Run ROUND 4 again: (Shift+alt+J - ROUND 4:)
 tt <- summary(tmp.diag, vparameters = TRUE)$varcomp
 tt[tt$component < 0,] # 0
-tmp.diag$loglik # 9094.019
+tmp.diag$loglik # 9093.554
 wald(tmp.diag)
 
 xx <- summary(tmp.diag)$varcomp
@@ -631,7 +634,6 @@ subset(out1, abs(stdCondRes) > 4)[,c('Experiment','Range','Row','Rep','ColRep','
 # Outlier 1 of 2
 # Experiment  Range Row Rep ColRep RowRep       Variety    yield stdCondRes
 # WMaA14NORT2     3  16   2      2      3 LRPB Spitfire 4.588745   4.070391
-
 (tmp <- subset(out1, out1$Experiment=='WMaA14NORT2' & out1$Range=='3'))
 hist(tmp$yield); tmp$yield
 (tmp <- subset(out1, out1$Experiment=='WMaA14NORT2' & out1$Row=='16'))
@@ -644,7 +646,6 @@ hist(tmp$yield); tmp$yield
 # Outlier 2 of 2
 # Experiment  Range Row Rep ColRep RowRep       Variety    yield stdCondRes
 # WMaA16BELL2     3  24   2      2      3        Qalbis 5.103571  -4.111392
-
 (tmp <- subset(out1, out1$Experiment=='WMaA16BELL2' & out1$Range=='3'))
 hist(tmp$yield); tmp$yield
 (tmp <- subset(out1, out1$Experiment=='WMaA16BELL2' & out1$Row=='24'))
@@ -659,8 +660,7 @@ hist(tmp$yield); tmp$yield
 # for the experiment and the variety generally.
 
 # QQNorm plots + scres heatmaps
-Colresid.print(data=out1, outfile=paste0("1Graphics/", met.name, "-", date,"-Residplots-tol=3.75.pdf"))
-
+Colresid.print(data=out1, outfile=paste0(user.dir,"1Graphics/", met.name, "-", date,"-Residplots-tol=3.75.pdf"))
 
 #### Diag Model for Genetic Variance ------------------------------------------------------------------------------------------------------------------
 # Now ready to run the diag model to get genetic variances out.
@@ -695,12 +695,9 @@ asr.diag <- update(asr.diag, aom = TRUE)
 asr.diag$loglik # 12567.71
 save.image()
 
-#save(list = ls(), file = "metfix.RData")
-#load("metfix.RData")
-
 #### Check Genetic Variances are all positive ---------------------------------------------------------------------------------------------------------
 vc1 <- summary(asr.diag)$varcomp
-unique(vc1[grep("Experiment:VarietyKeep", row.names(vc1)), "bound"]) # Bound
+unique(vc1[grep("Experiment:VarietyKeep", row.names(vc1)), "bound"]) # Bound: T
 subset(vc1, bound =="B")
 # Experiment:VarietyKeep!Experiment_WMaA13NIND4 2.393907e-07        NA      NA     B   0
 # Experiment:VarietyKeep!Experiment_WMaA15COOA2 3.128517e-07        NA      NA     B   0
@@ -722,7 +719,7 @@ g1 <- Rnvtdata %>% group_by(Experiment) %>% summarise(EMY = round(mean(yield, na
                                                      nV = n_distinct(Variety))
 
 #### Check EMY ----------------------------------------------------------------------------------------------------------------------------------------
-# Set very low EMY to SAGIinclude = FALSE...
+# Set Experiments with very low EMY to have SAGIinclude = FALSE...
 hist(g1$EMY)
 subset(g1, EMY < 1) # This cutoff of 1 will be different for each crop
 # Don't remove any trials from BarleyNorth for this
@@ -734,9 +731,9 @@ subset(g1, EMY < 1) # This cutoff of 1 will be different for each crop
 #WMaA14MUNG4  0.99    32
 
 # Comment:
-# Are these 'frosted' trials? CHecked report - they are not. 
+# Are these 'frosted' trials? Checked report - they are not. 
 # BULL2 was removed for low trial mean yield but MUNG4 was not
-# Will follow same protocol
+# Will follow same protocol.
 
  trial.info$SAGIInclude[trial.info$Experiment=="WMaA14BULL2"] <- FALSE
  trial.info$SAGIcomment <- as.character(trial.info$SAGIcomment)
@@ -759,56 +756,58 @@ subset(g1, EMY < 1) # This cutoff of 1 will be different for each crop
    geom_text(size = 2) + xlab("Environment Mean Yield (t/ha)") + ylab("Genetic Variance")
  library(gridExtra)
 
-pdf(paste0("1Graphics/",  met.name, "-", date.out, "-EMY-GenVar.pdf"))
-grid.arrange(p1, p2, p3, nrow = 3); dev.off() #Send this file to the breeders too... ##usually includes , p3
+pdf(paste0(user.dir,"1Graphics/",  met.name, "-", date.out, "-EMY-GenVar.pdf"))
+grid.arrange(p1, p2, p3, nrow = 3); dev.off() # Send this file to the breeders!
 
 #### Prepare Preliminary Data checking file -----------------------------------------------------------------------------------------------------------
 # This file is created to send to breeders, this file must be checked 
 # by breeders before MET analysis can continue
 
 # Identify the trials that have METinclude = FALSE and SAGIinclude==FALSe
-# Look at the comments online to identify why. Ideally we'd have these comments linked in so that we can see straight away.
+# Look at the comments online to identify why. 
+# Ideally we'd have these comments linked in so that we can see straight away.
 (met.xclude <- droplevels(trial.info[trial.info$METInclude=="FALSE" | trial.info$SAGIInclude=="FALSE", 
                                      c("Experiment", "Year", "METInclude", "AOVComment","SAGIInclude", "SAGIcomment")]))
 (met.xclude <- droplevels(subset(trial.info, METInclude=="FALSE" | SAGIInclude=="FALSE", 
                                  select = c(MET, Experiment, Year, State, Region, NearestTown, Latitude, Longitude,  
                                             SowingDate, HarvestDate, METInclude, AOVComment, SAGIInclude, SAGIcomment))))
 
-Rnvtdata <- Rnvtdata[, grep("Include", names(Rnvtdata), invert = TRUE)] #Exclude columns that have include in them
+Rnvtdata <- Rnvtdata[, grep("Include", names(Rnvtdata), invert = TRUE)] #Exclude columns from Rnvtdata that have 'Include' in them
 Rnvtdata <- merge(Rnvtdata, trial.info[, c("Experiment", "METInclude","SAGIInclude")],
                   by = "Experiment")
 
-# #Set up Info sheet from template and manual
-# info.sheet <- read.csv("met-date-prelimDataCheck-InfoSheet.csv",
-#                        header = FALSE, as.is = TRUE)
-# info.sheet$V2[info.sheet$V1=="Title"] <- paste(met.name, date.out, "prelimDataCheck.xlsx", sep = "-")
-# info.sheet$V2[info.sheet$V1=="Author"] <- "Mandy L Moore" #Your name, doh!
-# info.sheet$V2[info.sheet$V1=="Date"] <- date.out
-# 
-# 
-# fileXls <- paste0("1Results/", met.name, "-", date.out, "-prelimDataCheck.xlsx")
-# unlink(fileXls, recursive = FALSE, force = FALSE)
-# exc <- loadWorkbook('fileXls.xlsx', create = TRUE)
-# createSheet(exc,'Info')
-# writeWorksheet(exc, info.sheet, sheet = "Info", startRow = 1, startCol = 1, header = FALSE)
-# createSheet(exc,'VarietybyYear')
-# writeWorksheet(exc, vfreq, sheet = "VarietybyYear", startRow = 1, startCol = 1)
-# createSheet(exc,'ExperimentCheck')
-# writeWorksheet(exc, g3, sheet = "ExperimentCheck", startRow = 1, startCol = 1)
-# createSheet(exc,'METexcludeTrials')
-# writeWorksheet(exc, met.xclude, sheet = "METexcludeTrials", startRow = 1, startCol = 1)
-# saveWorkbook(exc)
+#### Info Sheet Set up from template and manual -----------------------------------------------------------------------------------------------------
+info.sheet <- read.csv(paste0(user.dir,"1Templates/met-date-prelimDataCheck-InfoSheet.csv"),
+                        header = FALSE, as.is = TRUE)
+info.sheet$V2[info.sheet$V1=="Title"] <- paste(met.name, date.out, "prelimDataCheck.xlsx", sep = "-")
+info.sheet$V2[info.sheet$V1=="Author"] <- "Mandy L Moore" #Your name, doh!
+info.sheet$V2[info.sheet$V1=="Date"] <- date.out
+ 
+fileXls <- paste0(user.dir,"1Results/", met.name, "-", date.out, "-prelimDataCheck.xlsx")
+unlink(fileXls, recursive = FALSE, force = FALSE)
+exc <- loadWorkbook(paste0(fileXls,'.xlsx'), create = TRUE)
+createSheet(exc,'Info')
+writeWorksheet(exc, info.sheet, sheet = "Info", startRow = 1, startCol = 1, header = FALSE)
+createSheet(exc,'VarietybyYear')
+writeWorksheet(exc, vfreq, sheet = "VarietybyYear", startRow = 1, startCol = 1)
+createSheet(exc,'ExperimentCheck')
+writeWorksheet(exc, g3, sheet = "ExperimentCheck", startRow = 1, startCol = 1)
+createSheet(exc,'METexcludeTrials')
+writeWorksheet(exc, met.xclude, sheet = "METexcludeTrials", startRow = 1, startCol = 1)
+saveWorkbook(exc)
 
 # SEND THIS FILE TO THE BREEDERS FOR LAST CHECKS BEFORE STARTING THE MET. OPEN IT AND CHECK THAT ALL IS IN ORDER FIRST!!!!
 
-save(list = c("Rnvtdata", "Rnvtmodels"), file = paste0("1RData/", met.name, "-", date.out, "-data4METcleanedall.RData"))
+save(list = c("Rnvtdata", "Rnvtmodels"), file = paste0(user.dir,"1RData/", met.name, "-", date.out, "-data4METcleanedall.RData"))
 
 #### Prepare the MET dataset for analysis ------------------------------------------------------------------------------------------------------------
 met.xclude # all are frosted trials
 
-# we're going to include these frosted trials in the Rolling MET
+# We're going to include these frosted trials in the Rolling MET
+# Usually the next line of code would be run to remove the trials for which METInclude is TRUE
 # Rnvtdata <- droplevels(Rnvtdata[Rnvtdata$METInclude==TRUE,])
 
+# Remove trials for which SAGIInclude is TRUE
 Rnvtdata <- droplevels(Rnvtdata[Rnvtdata$SAGIInclude==TRUE,])
 Rnvtmodels <- Rnvtmodels[is.element(Rnvtmodels$Experiment, Rnvtdata$Experiment),]
 
@@ -824,7 +823,6 @@ variety.final <- unique(Rnvtdata$VarietyKeep)
 
 variety.init[!variety.init%in%variety.final]
 #[1] FILLER_1  FILLER_10 Filler 
-
 
 #### Final Checks--------------------------------------------------------------------------------------------------------------------------------------
 #Check the number of experiments and Varieties are as you would expect. Original before subsetting
@@ -876,13 +874,13 @@ y0 <- t(tt)%*%tt; y0
 #   2017   21   22   31   36   52
 
 #### Save the data and models file -------------------------------------------------------------------------------------------------------------------
-save(list = ls(), file = paste0("1RData/",met.name, "-METfix.RData"))
+save(list = ls(), file = paste0(user.dir,"1RData/",met.name, "-METfix.RData"))
 #load(paste0(met.name, "-METsum.RData"))
-save(list = c("Rnvtdata", "Rnvtmodels"), file = paste0("1RData/",met.name, "-", date.out, "-data4RMETcleanedready.RData"))  
+save(list = c("Rnvtdata", "Rnvtmodels"), file = paste0(user.dir,"1RData/",met.name, "-", date.out, "-data4RMETcleanedready.RData"))  
 
 # For KNVT - includes frosted trials
-write.csv(Rnvtmodels, paste0("1ForKNVT/", met.name, "-", date.out, "-modelsFINAL.csv")) 
+write.csv(Rnvtmodels, paste0(user.dir,"1ForKNVT/", met.name, "-", date.out, "-modelsFINAL.csv")) 
 
 
 #### END OF SCRIPT - GO TO 03-METanalysis.R  ---------------------------------------------------------------------------------------------------------
-file.edit('Scripts/03-METAnalysis-v2.R')
+file.edit(paste0(user.dir,'1Scripts/03-METAnalysis-v2_MM.R'))
