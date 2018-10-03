@@ -393,11 +393,12 @@ trials.sum <- function(data){
 ##################################################################################################
 # 
 ##################################################################################################
-reps.check <- function(data, BlockID= "Rep.orig", outfile1, outfile2, ExptID = "Trial", VarietyID = "Genotype", ColID = "Col"){
+reps.check <- function(data, BlockID= "Rep.orig", outfile1, outfile2, ExptID = "Trial", VarietyID = "Genotype", ColID = "Col", RowID = "Row"){
                        require(ggplot2)
                        if(length(grep("Variety$",colnames(data)))==0){colnames(data)[grep(paste0(VarietyID,"$"),colnames(data))] <- "Variety"}
                        if(length(grep("Experiment$",colnames(data)))==0){colnames(data)[grep(paste0(ExptID,"$"),colnames(data))] <- "Experiment"}
                        if(length(grep("Range$",colnames(data)))==0){colnames(data)[grep(paste0(ColID,"$"),colnames(data))] <- "Range"}
+                       if(length(grep("Row$",colnames(data)))==0){colnames(data)[grep(paste0(RowID,"$"),colnames(data))] <- "Row"}
                        data <- droplevels(data[data$Variety!="Buffer",])
                        rr <- list()
                        ee <- levels(data$Experiment)
@@ -687,7 +688,7 @@ covariates.print <- function(data, infile, outfile, ExptID = "Trial", VarietyID 
 ########################################
 
 ######################################
-equal.phiv3 <- function(obj=BLasrA.sv, data=rice.df, ConstraintID = "YrCon", EnvCodeStart = 5, 
+equal.phiv3 <- function(obj=BLasrA.sv, data=rice.df, ConstraintID = "YrCon", 
                         constraint = "vcc", ExptID = "Trial", RowID='Row!cor', ColID='Range!cor', ResID = "R$") {
                         if(length(grep("Experiment$",colnames(data)))==0){colnames(data)[grep(paste0(ExptID,"$"),colnames(data))] <- "Experiment"}
                         EnvID <- colnames(data)[grep("Env|YrLoc",colnames(data))]
@@ -884,6 +885,47 @@ Colmodel.fit <- function(models, data){
 ##################################################################################################
 # 
 ##################################################################################################
+Colvario.print <- function(obj, data, outfile, EnvID = "Environment", ExptID = "Experiment", ColID='Range', RowID='Row', tol = 10){
+  # my function for compositing variograms for co-located trials...
+  require(ggplot2)
+  EnvID <- colnames(data)[grep("Env|YrLoc",colnames(data))]
+  env.df <- unique(alldata[,c(EnvID,ExptID)])
+  rownames(env.df) <- NULL
+  vario.data <- varioGram(obj)
+  vario.data$gamma2 <- vario.data$gamma*vario.data$np
+  pdf(outfile)
+  for(i in levels(env.df$Environment)){#i<- "AN15"
+    temp.vario.data <- droplevels(vario.data[vario.data$vv.groups %in% trimws(env.df[env.df[[EnvID]]==i,ExptID]),])
+    cc <- sort(unique(temp.vario.data[[ColID]]))
+    rr <- unique(temp.vario.data[[RowID]])
+    temp.vario.data <- data.frame(Range= rep(cc,each=length(rr)),
+                                  Row=rr,
+                                  gamma=as.vector(t(tapply(temp.vario.data$gamma2, list(temp.vario.data[[ColID]],temp.vario.data[[RowID]]), function(x) sum(x)))),
+                                  np= as.vector(t(tapply(temp.vario.data$np, list(temp.vario.data[[ColID]],temp.vario.data[[RowID]]), function(x) sum(x)))))
+    temp.vario.data$gamma <- temp.vario.data$gamma/temp.vario.data$np
+    temp.vario.data <- temp.vario.data[order(temp.vario.data$Row,temp.vario.data$Range),]
+    rownames(temp.vario.data) <- NULL
+    pp <- wireframe(gamma ~ Row * Range, data = droplevels(temp.vario.data[temp.vario.data$np>tol,]), 
+                    drape = T, colorkey = F, zoom = 0.8, 
+                    par.settings = list(axis.line = list(col = 'transparent'),
+                                        layout.widths=list(left.padding=2,right.padding=-7),
+                                        layout.heights=list(top.padding=-12,bottom.padding=-12)),
+                    xlab = list(label = "Row displacement", cex = 1, rot=20), 
+                    ylab = list(label = "Column displacement", cex = 1, rot=310),
+                    zlab = list(label = "Semi variance", cex = 1, rot=94),
+                    screen = list(z = 30, x = -60, y = 0), aspect = c(1, 0.66), 
+                    scales = list(distance = c(1, 1, 1.2), tck = c(1.4, 1, 1), arrows = F, cex = 0.8, col = "black"))
+    print(pp)
+    grid::grid.text(i, x=unit(0.5, "npc"), y=unit(0.92, "npc"), gp = gpar(fontface="bold", fontsize=20))
+  }
+  dev.off()
+  message("Output Figures Printed to File")
+} # end of co-located variogram.print
+########################################
+
+##################################################################################################
+# 
+##################################################################################################
 Colresid.print <- function(data, outfile, ExptID = "Trial", resID='residuals', scresID='stdCondRes', tol=3.5, ColID='Range', RowID='Row'){
                            require(ggplot2)
                            require(gridExtra)
@@ -1070,7 +1112,7 @@ nvt <- function(outfile,data,model,ExptID='Experiment',VarietyID='Variety',large
   #DT + KM updated to fix errors
   message("Version October 2017")
   message("Running Predict on Experiments...")
-  require(asreml4)
+  require(asreml)
   require(ASExtras4)
   require(XLConnect)
   trace <- "trace.txt"
@@ -1124,8 +1166,8 @@ nvt <- function(outfile,data,model,ExptID='Experiment',VarietyID='Variety',large
     pred$weights <- diag(solve(pvs$vcov[wh,wh]))
     tmp <- droplevels(tmp[tmp[[VarietyID]] %in% pred.list[[VarietyID]],])
     treps <- tapply(tmp[[trait]],tmp[[VarietyID]],function(x) length(x[!is.na(x)]))
-    pred$truereps <- treps[pred[[VarietyID]]]
-    pred$ems <- mean(pred$truereps/pred$weights)
+    pred$truereps <- treps[names(treps) %in% pred[[VarietyID]]]
+    pred$ems <- mean(pred$truereps/pred$weights, na.rm = T)
     blues[[i]] <- pred
     sed[i] <- pvs$avsed[2]
   }
