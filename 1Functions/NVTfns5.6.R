@@ -1,5 +1,5 @@
 ##################################################################################################
-# DT's NVT Functions - VERSION 5.6, 24 Feb 2018
+# DT's NVT Functions - VERSION 5.8, 22 Sep 2018
 #
 # Input from others as noted
 #
