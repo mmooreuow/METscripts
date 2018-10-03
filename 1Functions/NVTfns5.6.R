@@ -17,6 +17,7 @@ setup.fn <- function(computer="MAC", APP=FALSE){
                      require(gtools)
                      require(lattice)
                      require(mclust)
+                     require(od)
                      require(reshape2)
                      if(tolower(computer) %in% c("mac","apple","apple mac")){dyn.load("/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home/lib/server/libjvm.dylib")}
                      require(XLConnect)
