@@ -1,9 +1,10 @@
-##################################################################################################
+#### Script Information -------------------------------------------------------------------------
 # DT's NVT Functions - VERSION 5.8, 22 Sep 2018
 #
 # Input from others as noted
 #
-##################################################################################################
+
+#### setup function ------------------------------------------------------------------------------
 setup.fn <- function(computer="MAC", APP=FALSE){
                      options(width = 150)
                      require(asreml)
@@ -33,11 +34,8 @@ setup.fn <- function(computer="MAC", APP=FALSE){
                              require(shiny)
                              require(shinyBS)}
                 } # end of setup function
-########################################
 
-##################################################################################################
-# 
-##################################################################################################
+#### data.read function ------------------------------------------------------------------------------
 data.read <- function(data, infile, rows.skip=0, comments=FALSE, export=FALSE){
                       if(length(grep("xls", infile))==1){fileType <- "xls"}
                       if(length(grep("csv", infile))==1){fileType <- "csv"}
@@ -119,11 +117,9 @@ data.read <- function(data, infile, rows.skip=0, comments=FALSE, export=FALSE){
                        }
                        return(data.out)
               } # end of data read function
-########################################
 
-##################################################################################################
-# 
-##################################################################################################
+
+#### layouts.read function ------------------------------------------------------------------------------
 layouts.read <- function(data, infile){
                          require(plyr)
                          EnvID <- colnames(data)[grep("Env|YrLoc",colnames(data))]
@@ -190,11 +186,8 @@ layouts.read <- function(data, infile){
                         }
                         return(layouts)
                 } # end of layout read function
-########################################
 
-##################################################################################################
-# 
-##################################################################################################
+#### layouts.build function ------------------------------------------------------------------------------
 # DT with input from BC
 # loop over Year locations
 # if gap is null then data frame is as is
@@ -365,12 +358,7 @@ layouts.build <- function(data, layouts){
                              M$var.exclude <- var.exclude
                              return(M) 
                      } # end of co-located layouts function
-########################################
-
-
-##################################################################################################
-# 
-##################################################################################################
+#### trial summary function ------------------------------------------------------------------------------
 trials.sum <- function(data){
   EnvID <- colnames(data)[grep("Env|YrLoc",colnames(data))]
   yy <- levels(factor(data[[EnvID]]))
@@ -388,11 +376,9 @@ trials.sum <- function(data){
   print(temp)
   return(temp)
 } # end of trial summary function
-########################################
 
-##################################################################################################
-# 
-##################################################################################################
+#### rep check function ------------------------------------------------------------------------------
+
 reps.check <- function(data, BlockID= "Rep.orig", outfile1, outfile2, ExptID = "Trial", VarietyID = "Genotype", ColID = "Col", RowID = "Row"){
                        require(ggplot2)
                        if(length(grep("Variety$",colnames(data)))==0){colnames(data)[grep(paste0(VarietyID,"$"),colnames(data))] <- "Variety"}
@@ -466,11 +452,8 @@ reps.check <- function(data, BlockID= "Rep.orig", outfile1, outfile2, ExptID = "
                        M$rep.bad <- rep.bad
                        return(M)
               }# end of rep checks function
-########################################
 
-##################################################################################################
-# 
-##################################################################################################
+#### layouts.print function ------------------------------------------------------------------------------
 layouts.print <- function(data, outfile){
                           require(ggplot2)
                           EnvID <- colnames(data)[grep("Env|YrLoc",colnames(data))]
@@ -523,11 +506,8 @@ layouts.print <- function(data, outfile){
                                      if(i==np){message("Output Figures Printed to File")}
                            }
                  }# end of ColocatedGraphics function
-########################################
 
-##################################################################################################
-# 
-##################################################################################################
+#### covariates.print function ------------------------------------------------------------------------------
 covariates.print <- function(data, infile, outfile, ExptID = "Trial", VarietyID = "Genotype", ColID = "Col"){
                              analID <- "NVT"
                              if(length(grep("Variety$",colnames(data)))==0){colnames(data)[grep(paste0(VarietyID,"$"),colnames(data))] <- "Variety";analID <- "PBA"}
@@ -685,9 +665,8 @@ covariates.print <- function(data, infile, outfile, ExptID = "Trial", VarietyID 
                              M$data <- data
                              return(M)
                      }# end of covariates graphic function
-########################################
 
-######################################
+#### equal.phiv3 function ------------------------------------------------------------------------------
 equal.phiv3 <- function(obj=BLasrA.sv, data=rice.df, ConstraintID = "YrCon", 
                         constraint = "vcc", ExptID = "Trial", RowID='Row!cor', ColID='Range!cor', ResID = "R$") {
                         if(length(grep("Experiment$",colnames(data)))==0){colnames(data)[grep(paste0(ExptID,"$"),colnames(data))] <- "Experiment"}
@@ -726,9 +705,8 @@ equal.phiv3 <- function(obj=BLasrA.sv, data=rice.df, ConstraintID = "YrCon",
                                return(list(gammas=temp.ss,M=M2))
                         }
                         }# end of equal.phi function
-########################################
 
-##################################################################################################
+#### Colmodel.fit function ------------------------------------------------------------------------------
 #model.fit()
 #model function: to determine which terms (design or covariate) will be at which Experiments.
 #Note the residual is broken up into as many levels as there are in models$resid
@@ -880,11 +858,8 @@ Colmodel.fit <- function(models, data){
                          print(mt)
                          return(mt)  
                 } # end of co-located model.fit
-########################################
 
-##################################################################################################
-# 
-##################################################################################################
+#### Colocated variogram function ------------------------------------------------------------------------------
 Colvario.print <- function(obj, data, outfile, EnvID = "Environment", ExptID = "Experiment", ColID='Range', RowID='Row', tol = 10){
   # my function for compositing variograms for co-located trials...
   require(ggplot2)
@@ -921,11 +896,9 @@ Colvario.print <- function(obj, data, outfile, EnvID = "Environment", ExptID = "
   dev.off()
   message("Output Figures Printed to File")
 } # end of co-located variogram.print
-########################################
 
-##################################################################################################
-# 
-##################################################################################################
+
+#### residual.print function ------------------------------------------------------------------------------
 Colresid.print <- function(data, outfile, ExptID = "Trial", resID='residuals', scresID='stdCondRes', tol=3.5, ColID='Range', RowID='Row'){
                            require(ggplot2)
                            require(gridExtra)
@@ -993,11 +966,8 @@ Colresid.print <- function(data, outfile, ExptID = "Trial", resID='residuals', s
                            if(i != length(yc)){message("Warning, GGplot Error, Please Re-run Residual Function")}
                            if(i == length(yc)){message("Output Figures Printed to File")}
                   } # end of resid plots function
-########################################
 
-##################################################################################################
-# 
-##################################################################################################
+#### avsed function ------------------------------------------------------------------------------
 Colavsed.fn <- function(data, object, var.exclude=NULL, ...){
                         EnvID <- colnames(data)[grep("Env|YrLoc",colnames(data))]
                         var.exclude <- sort(unique(as.character(data$Variety[grep("fill|buff",tolower(data$Variety))])))
@@ -1051,9 +1021,9 @@ Colavsed.fn <- function(data, object, var.exclude=NULL, ...){
                          print(env.df);return(env.df)
                        }else{print(expt.df);return(expt.df)}
                }# end of avsed.fn
-########################################
 
-##################################################################################################
+
+#### final model function ------------------------------------------------------------------------------
 # This function builds the final model.csv based on avsed according to either 
 # Experiment or Environment
 Colfmodel.build <- function(avsed2, avsed3, models2, models3, tol=0.01){
@@ -1097,11 +1067,8 @@ Colfmodel.build <- function(avsed2, avsed3, models2, models3, tol=0.01){
                             Fmodels.ls$Fmodels <- Fmodels
                             return(Fmodels.ls)
                 }# end of final models build function
-########################################
 
-##################################################################################################
-# 
-##################################################################################################
+#### nvt to output SS results function ------------------------------------------------------------------------------
 nvt <- function(outfile,data,model,ExptID='Experiment',VarietyID='Variety',large.no.exp=FALSE,non.standard.trial=FALSE, ...){
   # Author J Taylor with input from CL + BC
   # DT to do- I need to alter some things here
@@ -1162,12 +1129,12 @@ nvt <- function(outfile,data,model,ExptID='Experiment',VarietyID='Variety',large
     options(warn=0)
     pred <- pvs$pvals
     wh <- !is.na(pred$predicted.value)
-    pred <- pred[wh,]
+    pred <- droplevels(pred[wh,])
     pred$weights <- diag(solve(pvs$vcov[wh,wh]))
-    tmp <- droplevels(tmp[tmp[[VarietyID]] %in% pred.list[[VarietyID]],])
+    tmp <- droplevels(tmp[as.character(tmp[[VarietyID]]) %in% pred.list[[VarietyID]],])
     treps <- tapply(tmp[[trait]],tmp[[VarietyID]],function(x) length(x[!is.na(x)]))
-    pred$truereps <- treps[names(treps) %in% pred[[VarietyID]]]
-    pred$ems <- mean(pred$truereps/pred$weights, na.rm = T)
+    pred$truereps <- treps[as.character(pred[[VarietyID]])]
+    pred$ems <- mean(pred$truereps/pred$weights)
     blues[[i]] <- pred
     sed[i] <- pvs$avsed[2]
   }
@@ -1359,11 +1326,8 @@ nvt <- function(outfile,data,model,ExptID='Experiment',VarietyID='Variety',large
   
   message("Data Results Exported to File")
 } #END of NVT function
-########################################
 
-##################################################################################################
-# 
-##################################################################################################
+#### results print function ------------------------------------------------------------------------------
 results.print <- function(data, outfile){
                           require(ggplot2)
                           data$plot.grp <- ceiling(as.numeric(factor(data$Experiment))/9)
