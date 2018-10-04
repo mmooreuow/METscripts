@@ -1162,12 +1162,12 @@ nvt <- function(outfile,data,model,ExptID='Experiment',VarietyID='Variety',large
     options(warn=0)
     pred <- pvs$pvals
     wh <- !is.na(pred$predicted.value)
-    pred <- pred[wh,]
+    pred <- droplevels(pred[wh,])
     pred$weights <- diag(solve(pvs$vcov[wh,wh]))
-    tmp <- droplevels(tmp[tmp[[VarietyID]] %in% pred.list[[VarietyID]],])
+    tmp <- droplevels(tmp[as.character(tmp[[VarietyID]]) %in% pred.list[[VarietyID]],])
     treps <- tapply(tmp[[trait]],tmp[[VarietyID]],function(x) length(x[!is.na(x)]))
-    pred$truereps <- treps[names(treps) %in% pred[[VarietyID]]]
-    pred$ems <- mean(pred$truereps/pred$weights, na.rm = T)
+    pred$truereps <- treps[as.character(pred[[VarietyID]])]
+    pred$ems <- mean(pred$truereps/pred$weights)
     blues[[i]] <- pred
     sed[i] <- pvs$avsed[2]
   }
