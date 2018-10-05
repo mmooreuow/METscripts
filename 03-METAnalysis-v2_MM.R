@@ -27,15 +27,16 @@ library(ggplot2)
 
 # Required for model.fit:
 source("1Functions/NVTfns5.6.R")  
-setup.fn(computer='linux') 
+setup.fn(computer='linux') # Change computer argument (computer = "") to the type of computer you are using. 
 
 # Set-up MET details
 met.name <- "WheatMainNorth"
 date <- "2018-09-01"
 date.out <- "2018-09-01"
+user.dir <- "/home/mandy/Dropbox/CBB/Projects/BBAGI/GRDC/NVT/MET/WheatNorth-MM"
 
 # Import data from 02-METfixR
-load("/home/mandy/Dropbox/CBB/Projects/BBAGI/GRDC/NVT/METs/WheatNorth-MM/1RData/WheatMainNorth-2018-09-01-data4RMETcleanedready.RData")
+load(paste0(user.dir,"/1RData/",met.name , "-", date, "-data4RMETcleanedready.RData"))
 
 ###### Data Checks and Set-up -------------------------------------------------------------------------------------------------------------------------
 
@@ -78,7 +79,9 @@ nrow(unique(Rnvtdata[, c("Experiment", "VarietyKeep")]))/(ng*ne) #0.3074743
 
 models.asr <- list()
 
-mt
+names(mt)
+names(mt$resid)
+
 # ROUND 1: ----
 asr.diag <- asreml(yield ~ Experiment + 
                      at(Experiment, mt$animaldmg):animaldmg + 
@@ -174,7 +177,7 @@ asr.rr1 <- asreml(yield ~ Experiment +
 save.image()
 for(i in 1:10){
   print(i)
-  # if(asr.rr1$converge) stop("converged - yaay")
+  if(asr.rr1$converge) stop("converged - yaay")
   asr.rr1 <- update(asr.rr1)
 } 
 
@@ -189,7 +192,7 @@ subset(summary(asr.rr1)$varcomp, bound=="B")
 # Experiment:VarietyKeep!Experiment_WMaA14GOON2 4.666087e-07        NA      NA     B   0
 # Experiment:VarietyKeep!Experiment_WMaA15DUAR4 2.761365e-08        NA      NA     B  NA
 models.asr[["rr1ID"]] <- asr.rr1
-models.asr[["rr1ID"]]$modelstats <- cbind.data.frame(niter = 38, mniter = 2.8)
+models.asr[["rr1ID"]]$modelstats <- cbind.data.frame(niter = 38, mniter = 2.)
 
 #### Calculate %total vaf Model 2 ----------------------------------------------------------------------------------
 
@@ -276,12 +279,12 @@ save.image()
 
 #### Run Model 3: rr2 + diag -------------------------------------------------------------------------------
 ## asr.rr1$loglik was #11800.08
-## first iteration of rr2+diag was 12274.70
+## first iteration of rr2+diag was 12098.45
 ## so all OK
 ## 6 sec per iteration, 141 iterations before converged
 ## this is fine
 
-save(list = ls(), file = "1RData/RMETanalysis.RData")
+save(list = ls(), file = paste0(user.dir,"/1RData/RMETanalysis.RData"))
 asr.rr2 <- asreml(yield ~ Experiment + 
                     at(Experiment, mt$animaldmg):animaldmg + 
                     at(Experiment, mt$est):est + 
@@ -294,9 +297,10 @@ asr.rr2 <- asreml(yield ~ Experiment +
                     at(Experiment, mt$rrow):Row + at(Experiment, mt$rcol):Range,
                   residual = ~ dsum(~id(Range):id(Row)| Experiment, levels = unlist(mt$resid)),
                   na.action = na.method(y='include', x='include'), data=Rnvtdata, G.param = rr2.SV, R.param = rr2.SV)
-#Do this as a for loop so that you don't lose work if an update crashes mid-way. Always save the asr object before running a 2nd loop!
-save.image()
+# Do the updates in a for loop so that you don't lose work if an update crashes mid-way. 
+# Always save the asr object before running a 2nd loop!
 
+save.image()
 for(i in 1:10){#x2
   print(i)
   if(asr.rr2$converge) stop("converged - yaay")
@@ -304,7 +308,7 @@ for(i in 1:10){#x2
 }
 
 #1 update, finished on 10th iteration, but then lots of updates to make %ch < 1
-asr.rr2$loglik #12274.70  (after updating to remove %ch.)
+asr.rr2$loglik #12274.13  (after updating to remove %ch.)
 subset(summary(asr.rr2)$varcomp, summary(asr.rr2)$varcomp$"%ch">1)
 subset(summary(asr.rr2)$varcomp, bound == "B")
 # Experiment:VarietyKeep!Experiment_WMaA13BILO4 1.382391e-07        NA      NA     B   0
@@ -409,7 +413,7 @@ save.image()
 ## 11.5 sec per iteration, 59 iterations before converged
 ## this is fine
 
-save(list = ls(), file = "1RData/RMETanalysis.RData")
+save(list = ls(), file = paste0(user.dir,"/1RData/RMETanalysis.RData"))
 asr.rr3 <-asreml(yield ~ Experiment + 
                    at(Experiment, mt$animaldmg):animaldmg + 
                    at(Experiment, mt$est):est + 
@@ -422,14 +426,16 @@ asr.rr3 <-asreml(yield ~ Experiment +
                    at(Experiment, mt$rrow):Row + at(Experiment, mt$rcol):Range,
                  residual = ~ dsum(~id(Range):id(Row)| Experiment, levels = unlist(mt$resid)),
                   na.action = na.method(y='include', x='include'), data=Rnvtdata, G.param = rr3.SV, R.param = rr3.SV)
-#Do this as a for loop so that you don't lose work if an update crashes mid-way. 
-#Always save the asr object before running a 2nd loop!
+# Do the updates in a for loop so that you don't lose work if an update crashes mid-way. 
+# Always save the asr object before running a 2nd loop!
+
 save.image()
 for(i in 1:10){#x1
   print(i)
-  #if(asr.rr3$converge) stop("converged - yaay")
+  if(asr.rr3$converge) stop("converged - yaay")
   asr.rr3 <- update(asr.rr3)
 }
+
 #3 updates, finished on 7th iteration up date, but then lots of updates to make %ch < 1
 asr.rr3$loglik #12614.17
 subset(summary(asr.rr3)$varcomp, summary(asr.rr3)$varcomp$"%ch">1)
@@ -467,7 +473,7 @@ models.asr[["rr3ID"]]$"site%vaf" <- diag(lam%*%t(lam))/diag(Gmat)
 
 sort(models.asr[["rr3ID"]]$"site%vaf")
 
-#### Rolling MET sequence Model 3 --------------------------------------------------------------------------------------- 
+#### Rolling MET sequence Model 4 --------------------------------------------------------------------------------------- 
 # The following code is for Rolling MET analysis
 
 # vv <- as.data.frame(vv)
@@ -482,7 +488,7 @@ sort(models.asr[["rr3ID"]]$"site%vaf")
 # write.csv(scratchvaf[,c(2,1)], "asr.rr3-vaf-scratch.csv", row.names = F)
 
 #### Set-up Model 5: rr4 + diag -------------------------------------------------------------------------------
-save(list = ls(), file = "1RData/RMETanalysis.RData")
+save(list = ls(), file = paste0(user.dir,"/1RData/RMETanalysis.RData"))
 rr4.sv <- asreml(yield ~ Experiment + 
                    at(Experiment, mt$animaldmg):animaldmg + 
                    at(Experiment, mt$est):est + 
@@ -533,19 +539,13 @@ rr4.SV$Value[abs(rr4.SV$Value)<0.00001 & rr4.SV$Constraint != "F"] <- 1e-4
 save.image()
 
 #### Run Model 5: rr4 + diag -------------------------------------------------------------------------------
-## asr.rr3$loglik was 12614.26
-## first iteration of rr4+diag was 12614.26 (12822.6 -converged)
+## asr.rr3$loglik 12614.15
+##  first iteration of rr4+diag was 12756.1
 ## so all OK
-## 2.2 sec per iteration, 51 iterations before converged
-## this is fine
-#######################
-## asr.rr4$loglik
-##  first iteration of rr4+diag was 12614.26
-## so all OK
-## 2.2 sec per iteration, 51 iterations before converged
+## 20.2 sec per iteration, 51 iterations before converged
 ## this is fine
 ## 
-save(list = ls(), file = "1RData/RMETanalysis.RData")
+save(list = ls(), file = paste0(user.dir,"/1RData/RMETanalysis.RData"))
 asr.rr4 <- asreml(yield ~ Experiment + 
                     at(Experiment, mt$animaldmg):animaldmg + 
                     at(Experiment, mt$est):est + 
@@ -558,11 +558,14 @@ asr.rr4 <- asreml(yield ~ Experiment +
                     at(Experiment, mt$rrow):Row + at(Experiment, mt$rcol):Range,
                   residual = ~ dsum(~id(Range):id(Row)| Experiment, levels = unlist(mt$resid)),
                   na.action = na.method(y='include', x='include'), data=Rnvtdata, G.param = rr4.SV, R.param = rr4.SV)
-#Do this as a for loop so that you don't lose work if an update crashes mid-way. Always save the asr object before running a 2nd loop!
+
+# Do the updates in a for loop so that you don't lose work if an update crashes mid-way. 
+# Always save the asr object before running a 2nd loop!
+
 save.image()
 for(i in 1:10){#x1
   print(i)
-  # if(asr.rr4$converge) stop("converged - yaay")
+  if(asr.rr4$converge) stop("converged - yaay")
   asr.rr4 <- update(asr.rr4)
 }
 #2 loops, finished on 9th rep pf the 2nd loop. (loops have 13 iterations) but then lots of updates to make %ch < 1
@@ -587,9 +590,8 @@ asr.rr4 <- update(asr.rr4) #+40 updates to get % ch smaller than 1% was
 models.asr[["rr4ID"]] <- asr.rr4
 models.asr[["rr4ID"]]$modelstats <- cbind.data.frame(niter = 35 , mniter = 20)
 
-#-----------------
-## %vaf
-#-----------------
+#### Calculate %total vaf Model 5 ----------------------------------------------------------------------------------
+
 vv <- asr.rr4$vparameters
 avar <- vv[grep('VarietyKeep',names(vv))]
 lam <- matrix(avar[grep('fa',names(avar))],ncol=4)
@@ -606,6 +608,7 @@ hist(diag(lam%*%t(lam))/diag(Gmat))
 models.asr[["rr4ID"]]$"%vaf" <- sum(diag(lam %*% t(lam)))/sum(diag(Gmat))
 models.asr[["rr4ID"]]$"site%vaf" <- diag(lam%*%t(lam))/diag(Gmat)
 
+#### Rolling MET sequence Model 5 --------------------------------------------------------------------------------------- 
 # vv <- as.data.frame(vv)
 # vv$Component <- rownames(vv)
 # names(vv)[1] <- "scratch" 
@@ -618,10 +621,10 @@ models.asr[["rr4ID"]]$"site%vaf" <- diag(lam%*%t(lam))/diag(Gmat)
 # write.csv(scratchvaf[,c(2,1)], "asr.rr4-vaf-scratch.csv", row.names = F)
 
 
-save(list = ls(), file = "1RData/RMETanalysis.RData")
-####################################################################################################
-## Model 6: rr5 + diag
-#####################################################################################################
+save(list = ls(), file = paste0(user.dir,"/1RData/RMETanalysis.RData"))
+
+#### Set-up Model 6: rr5 + diag -------------------------------------------------------------------------------
+
 rr5.sv <- asreml(yield ~ Experiment + 
                    at(Experiment, mt$animaldmg):animaldmg + 
                    at(Experiment, mt$est):est + 
@@ -675,14 +678,14 @@ rownames(rr5.SV) <- NULL
 rr5.SV$Value[abs(rr5.SV$Value)<0.00001 & rr5.SV$Constraint != "F"] <- 1e-4
 save.image()
 
-#######################
-## > asr.rr5$loglik
-## [1] 3929.821 first iteration of rr5+diag was 12970.48
+#### Run Model 6: rr5 + diag -------------------------------------------------------------------------------
+## asr.rr4$loglik 12823.14
+##  first iteration of rr4+diag was 12756.1
 ## so all OK
-## 3.3 sec per iteration, 67iterations before converged
+## 20.2 sec per iteration, 51 iterations before converged
 ## this is fine
-## 
-save(list = ls(), file = "1RData/RMETanalysis.RData")
+
+save(list = ls(), file = paste0(user.dir,"/1RData/RMETanalysis.RData"))
 asr.rr5 <- asreml(yield ~ Experiment + 
                     at(Experiment, mt$animaldmg):animaldmg + 
                     at(Experiment, mt$est):est + 
@@ -695,13 +698,17 @@ asr.rr5 <- asreml(yield ~ Experiment +
                     at(Experiment, mt$rrow):Row + at(Experiment, mt$rcol):Range,
                   residual = ~ dsum(~id(Range):id(Row)| Experiment, levels = unlist(mt$resid)),
                   na.action = na.method(y='include', x='include'), data=Rnvtdata, G.param = rr5.SV, R.param = rr5.SV)
-#Do this as a for loop so that you don't lose work if an update crashes mid-way. Always save the asr object before running a 2nd loop!
+
+# Do the updates in a for loop so that you don't lose work if an update crashes mid-way. 
+# Always save the asr object before running a 2nd loop!
+
 save.image()
 for(i in 1:100){#x1
   print(i)
-  #if(asr.rr5$converge) stop("converged - yaay")
+  if(asr.rr5$converge) stop("converged - yaay")
   asr.rr5 <- update(asr.rr5)
 }
+
 #1 loop , finished on 6th of the 2nd loop (13 iterations per loop set), but then lots of updates to make %ch < 1
 asr.rr5$loglik # 12970.48, 12997.11 (converged), 12997.56
 asr.rr5$converge
@@ -732,9 +739,8 @@ asr.rr5 <- update(asr.rr5) #+10 updates to get % ch smaller than 1% was
 models.asr[["rr5ID"]] <- asr.rr5
 models.asr[["rr5ID"]]$modelstats <- cbind.data.frame(niter = 20, mniter = 33)
 
-#--------------------
-## %vaf
-#--------------------
+#### Calculate %total vaf Model 6 ----------------------------------------------------------------------------------
+
 vv <- asr.rr5$vparameters
 avar <- vv[grep('VarietyKeep',names(vv))]
 lam <- matrix(avar[grep('fa',names(avar))],ncol=5)
@@ -753,9 +759,10 @@ models.asr[["rr5ID"]]$"site%vaf" <- diag(lam%*%t(lam))/diag(Gmat)
 
 sort(models.asr[["rr5ID"]]$"site%vaf")
 
-save(list = ls(), file = "1RData/frostid.RData")
+save(list = ls(), file = paste0(user.dir,"/1RData/frostid.RData"))
 #load("nofrostid.RData")
 
+#### Rolling MET sequence Model 6 --------------------------------------------------------------------------------------- 
 # vv <- as.data.frame(vv)
 # vv$Component <- rownames(vv)
 # names(vv)[1] <- "scratch" 
@@ -767,9 +774,8 @@ save(list = ls(), file = "1RData/frostid.RData")
 # names(scratchvaf)[1] <- "scratch"
 # write.csv(scratchvaf[,c(2,1)], "asr.rr5-vaf-scratch.csv", row.names = F)
 
-####################################################################################################
-## Model 6: rr6 + diag
-#####################################################################################################
+#### Set-up Model 7: rr6 + diag -------------------------------------------------------------------------------
+
 rr6.sv <- asreml(yield ~ Experiment + 
                    at(Experiment, mt$animaldmg):animaldmg + 
                    at(Experiment, mt$est):est + 
@@ -793,8 +799,7 @@ dimnames(rr5.gam) <- list(levels(Rnvtdata$Experiment),c('psi','rr.psi','lam1', '
 
 
 #Put values from previous model in the starting values format.
-# the structure is 1:ne = rr.var, (ne+1):2*ne = rr.fa2, (2*ne + 1):3*ne = rr.fa2, (3*ne+1):4*ne = psi's, and then other terms
-#Put values from previous model in the starting values format.
+
 rr6.temp$Value[grep('.*var', rr6.temp$Component)] <- 0 # set rr psi's to zero # 0.2*rr5.gam for fa1
 rr6.temp$Value[grep('fa1', rr6.temp$Component)] <- rr5.gam[,"lam1"]
 rr6.temp$Value[grep('fa2', rr6.temp$Component)] <- rr5.gam[,"lam2"]
@@ -824,14 +829,14 @@ rownames(rr6.SV) <- NULL
 rr6.SV$Value[abs(rr6.SV$Value)<0.00001 & rr6.SV$Constraint != "F"] <- 1e-4
 save.image()
 
-#######################
-## > asr.rr6$loglik
-## [1] 3929.821 first iteration of rr6+diag was 12970.48
+#### Run Model 7: rr6 + diag -------------------------------------------------------------------------------
+## asr.rr5$loglik 12998.22
+## first iteration of rr6+diag was 12756.1
 ## so all OK
-## 3.3 sec per iteration, 67iterations before converged
+## 20.2 sec per iteration, 51 iterations before converged
 ## this is fine
-## 
-save(list = ls(), file = "1RData/RMETanalysis.RData")
+
+save(list = ls(), file = paste0(user.dir,"/1RData/RMETanalysis.RData"))
 asr.rr6 <- asreml(yield ~ Experiment + 
                     at(Experiment, mt$animaldmg):animaldmg + 
                     at(Experiment, mt$est):est + 
@@ -844,17 +849,14 @@ asr.rr6 <- asreml(yield ~ Experiment +
                     at(Experiment, mt$rrow):Row + at(Experiment, mt$rcol):Range,
                   residual = ~ dsum(~id(Range):id(Row)| Experiment, levels = unlist(mt$resid)),
                   na.action = na.method(y='include', x='include'), data=Rnvtdata, G.param = rr6.SV, R.param = rr6.SV)
-#Do this as a for loop so that you don't lose work if an update crashes mid-way. Always save the asr object before running a 2nd loop!
+
+# Do the updates in a for loop so that you don't lose work if an update crashes mid-way. 
+# Always save the asr object before running a 2nd loop!
+
 save.image()
 for(i in 1:100){#x1
   print(i)
   if(asr.rr6$converge) stop("converged - yaay")
-  asr.rr6 <- update(asr.rr6)
-}
-save.image()
-for(i in 1:100){#x1
-  print(i)
-  #if(asr.rr6$converge) stop("converged - yaay")
   asr.rr6 <- update(asr.rr6)
 }
 save.image()
@@ -897,9 +899,8 @@ asr.rr6 <- update(asr.rr6) #+10 updates to get % ch smaller than 1% was
 models.asr[["rr6ID"]] <- asr.rr6
 models.asr[["rr6ID"]]$modelstats <- cbind.data.frame(niter = 481 , mniter = 40)
 
-#--------------------
-## %vaf
-#--------------------
+#### Calculate %total vaf Model 7 ----------------------------------------------------------------------------------
+
 vv <- asr.rr6$vparameters
 avar <- vv[grep('VarietyKeep',names(vv))]
 lam <- matrix(avar[grep('fa',names(avar))],ncol=6)
@@ -918,9 +919,10 @@ models.asr[["rr6ID"]]$"site%vaf" <- diag(lam%*%t(lam))/diag(Gmat)
 
 sort(models.asr[["rr6ID"]]$"site%vaf")
 
-save(list = ls(), file = "1RData/frostid.RData")
+save(list = ls(), file = paste0(user.dir,"/1RData/frostid.RData"))
 #load("nofrostid.RData")
 
+#### Rolling MET sequence Model 7 --------------------------------------------------------------------------------------- 
 # vv <- as.data.frame(vv)
 # vv$Component <- rownames(vv)
 # names(vv)[1] <- "scratch" 
@@ -933,12 +935,8 @@ save(list = ls(), file = "1RData/frostid.RData")
 # write.csv(scratchvaf[,c(2,1)], "asr.rr6-vaf-scratch.csv", row.names = F)
 
 
-#############################
-##
-## rr6 + diag with AR1 x AR1
-##
-############################### 
-## 
+#### Set-up Model 8: rr6 + ar -------------------------------------------------------------------------------
+
 rr6ar.sv <-asreml(yield ~ Experiment + 
                     at(Experiment, mt$animaldmg):animaldmg + 
                     at(Experiment, mt$est):est + 
@@ -959,8 +957,8 @@ rr6.sv <- rr6ar.sv$vparameters.table
 rownames(rr6.sv) <- rr6.sv$Component
 
 # Get starting values from rr6ID model and correlations from diag ID
-rr6.allID <- models.asr[['rr6ID']]$vparameters #rr6IDwas an ID model.
-diag.cor <- models.asr[['diagAR1']]$vparameters #diag was an AR1 model
+rr6.allID <- models.asr[['rr6ID']]$vparameters # rr6ID was an ID model.
+diag.cor <- models.asr[['diagAR1']]$vparameters # diag was an AR1 model
 diag.cor <- diag.cor[grep("cor", names(diag.cor))]
 rr6.all <- c(rr6.allID,diag.cor)
 # first check terms match up
@@ -985,12 +983,13 @@ rr6.sv$Value[abs(rr6.sv$Value) < 1e-5 & rr6.sv$Constraint != "F"] <- .001
 rownames(rr6.sv) <- NULL
 save.image()
 
-#######################
-## asr.rr6$loglik #3984.813
-## rr6 + diag ar1xar1 run
-##  8.8 sec/iternation
-## starting logl 4087.532
-#load("all.RData")
+#### Run Model 8: rr6 + ar -------------------------------------------------------------------------------
+## asr.rr6$loglik 13190.43
+## first iteration of rr6+ar was 12756.1
+## so all OK
+## 20.2 sec per iteration, 51 iterations before converged
+## this is fine
+
 asreml.options(workspace = "2000mb", pworkspace="2000mb")
 asr.rr6ar <- asreml(yield ~ Experiment + 
                       at(Experiment, mt$animaldmg):animaldmg + 
@@ -1010,7 +1009,7 @@ asr.rr6ar <- asreml(yield ~ Experiment +
                     G.param = rr6.sv, R.param = rr6.sv)
 
 save.image()
-save(list = ls(), file = "1RData/frostid.RData")
+save(list = ls(), file = paste0(user.dir,"/1RData/frostid.RData"))
 for(i in 1:100){#x1
   print(i)
   if(asr.rr6ar$converge) stop ("Yaay - converged")
@@ -1018,7 +1017,7 @@ for(i in 1:100){#x1
 }
 
 save.image()
-save(list = ls(), file = "1RData/frostid.RData")
+save(list = ls(), file = paste0(user.dir,"/1RData/frostid.RData"))
 for(i in 1:100){#x1
   print(i)
   # if(asr.rr6ar$converge) stop ("Yaay - converged")
@@ -1055,11 +1054,10 @@ models.asr[["rr6AR1"]] <- asr.rr6ar
 models.asr[["rr6AR1"]]$modelstats <- cbind.data.frame(niter = 167, mniter = 113) # 12*13 +11
 asr.rr6ar$loglik #15013.22
 
-save(list = ls(), file = "1RData/frostid.RData")
+save(list = ls(), file = paste0(user.dir,"/1RData/frostid.RData"))
 
-#--------------------
-## %vaf
-#--------------------
+#### Calculate %total vaf Model 8 ----------------------------------------------------------------------------------
+
 vv <- asr.rr6ar$vparameters
 avar <- vv[grep('VarietyKeep',names(vv))]
 lam <- matrix(avar[grep('fa',names(avar))],ncol=6)
@@ -1077,22 +1075,18 @@ models.asr[["rr6AR1"]]$"%vaf" <- sum(diag(lam %*% t(lam)))/sum(diag(Gmat))
 models.asr[["rr6AR1"]]$"site%vaf" <- diag(lam%*%t(lam))/diag(Gmat)
 sort(models.asr[["rr6AR1"]]$"site%vaf")
 
-save(list = ls(), file = "1RData/frostid.RData")
+save(list = ls(), file = paste0(user.dir,"/1RData/frostid.RData"))
 
 
-###############################-----------------------------------------------------------------
-#Output LOGL and %varexpl
-save(list = c("models.asr"), file = paste0("1RData/", met.name, "-frostid-allmodels.RData"))
+#### Output LogLik and %varexpl for Model 8 ----------------------------------------------------------------------------------
+save(list = c("models.asr"), file = paste0(user.dir,"/1RData/", met.name, "-frostid-allmodels.RData"))
 
-save(list = c("Rnvtdata", "Rnvtmodels", "asr.rr6ar", "met.name"), file = paste0("1RData/", met.name, "-frostid",  "-RMETanalysisOUT.RData"))
+save(list = c("Rnvtdata", "Rnvtmodels", "asr.rr6ar", "met.name"), file = paste0(user.dir,"/1RData/", met.name, "-frostid",  "-RMETanalysisOUT.RData"))
 
-save(list = ls(), file = "frostid.RData")
+save(list = ls(), file = paste0(user.dir,"/1RData/frostid.RData"))
 
 
-########################
-
-## end of script  #NOW GO TO 04-METout_v2.R
-
-##########################
+#### END OF SCRIPT - GO TO 03-METanalysis.R  ---------------------------------------------------------------------------------------------------------
+file.edit('04-METout_v2.R')
 
 save.image()
